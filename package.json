@@ -1,0 +1,23 @@
+{
+  "name": "your-worker-name",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "biome check src __tests__",
+    "lint:fix": "biome check --write src __tests__",
+    "typecheck": "tsc --noEmit",
+    "check": "bun run typecheck && bun run lint && bun test"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "^0.5.0",
+    "@cloudflare/workers-types": "^4.0.0",
+    "@biomejs/biome": "^1.9.0",
+    "typescript": "^5.0.0",
+    "vitest": "^2.0.0",
+    "wrangler": "^3.0.0"
+  }
+}

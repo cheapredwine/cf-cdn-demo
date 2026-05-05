@@ -1,0 +1,38 @@
+name = "your-worker-name"
+main = "src/index.ts"
+compatibility_date = "2025-04-01"
+compatibility_flags = ["nodejs_compat"]
+
+# Uncomment and configure bindings as needed for this project
+
+# --- AI ---
+# [ai]
+# binding = "AI"
+
+# --- D1 ---
+# [[d1_databases]]
+# binding = "DB"
+# database_name = "your-db-name"
+# database_id = "TODO: fill in after wrangler d1 create"
+
+# --- R2 ---
+# [[r2_buckets]]
+# binding = "BUCKET"
+# bucket_name = "your-bucket-name"
+
+# --- KV ---
+# [[kv_namespaces]]
+# binding = "KV"
+# id = "TODO: fill in after wrangler kv:namespace create"
+
+# --- Durable Objects ---
+# [[durable_objects.bindings]]
+# name = "MY_DO"
+# class_name = "MyDurableObject"
+#
+# [[migrations]]
+# tag = "v1"
+# new_classes = ["MyDurableObject"]
+
+# --- Secrets (set via wrangler secret put, never here) ---
+# MY_SECRET_KEY
