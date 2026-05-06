@@ -1,7 +1,7 @@
 # Multi-CDN Demo — STATE
 
 **Generated:** 2026-05-05T23:51Z
-**Last updated:** 2026-05-06T00:55Z (run-of-show reconciliation: env-based wrangler config, CORS, real path_routing, redeployed, Pages domains attached)
+**Last updated:** 2026-05-06T20:30Z (LB SSL/healthcheck/host-override sequence resolved — demo is fully operational)
 **Domain:** jsherron.com
 **Cloudflare Account ID:** 1ddebf6f9507d3fc9052158be9d42dee
 **Cloudflare Zone ID:** 6bcf8859da225392d8fae3351eb5de3e
@@ -36,10 +36,10 @@ All three deployed via single `wrangler.toml` with `[env.public|secure|meter]`. 
 
 | Resource | ID | Notes |
 |---|---|---|
-| Pool `pool-cf-20260505-2351` | Created via dashboard | Phase 5 |
-| Pool `pool-cloudfront-20260505-2351` | Created via dashboard | Phase 5 |
-| Load Balancer `assets.demo.jsherron.com` | Created via dashboard | Phase 5 — steering 50/50 |
-| SSL Certificate | **MISSING** | `assets.demo.jsherron.com` needs Advanced Certificate (not auto-provisioned) |
+| Pool `pool-cf-20260505-2351` | Created via dashboard | Origin `cf-pool.demo.jsherron.com`. Host header override = origin hostname. |
+| Pool `pool-cloudfront-20260505-2351` | Created via dashboard | Origin `cloudfront-pool.demo.jsherron.com`. Host header override = origin hostname. Monitor path `/healthcheck.txt` (no `/public/` because CloudFront origin path strips it). |
+| Load Balancer `assets.demo.jsherron.com` | Created via dashboard | Steering 50/50 random. Both pools healthy. |
+| SSL Certificate `*.demo.jsherron.com` | Advanced Cert | Covers LB hostname + all `*.demo` subdomains. Replaces three superseded subdomain certs. |
 
 ## AWS resources
 

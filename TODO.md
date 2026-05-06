@@ -1,114 +1,37 @@
 # Agent TODO — Next Session
 
-**Status:** Code gates green, meter wired, configs reconciled. Two infra tasks block the demo.
+**Status:** ✅ Demo fully operational. All P1/P2 items resolved 2026-05-06. Only polish remains.
 
 ---
 
-## 🔴 Priority 1: Redeploy Workers with 2026-05-06 code changes
+## 🟢 Optional polish
 
-The meter incrementer and `STEERING_MODE`/`ROLLOUT_PCT` vars exist in the repo but aren't live yet.
+- [ ] **Demo dry run** with WARP off, full 15-minute run-of-show
+- [ ] **Generate real meter traffic** (50–100 requests through `assets.demo`) before taking the AE screenshot — meter UI now populates from real bytes after Gap 1 fix landed
+- [ ] **Merge PR #1**: https://github.com/cheapredwine/cf-cdn-demo/pull/1
+- [ ] **Update `README.md`** — still has template content from the bootstrap
 
-```bash
-npx wrangler login   # if token expired
-npx wrangler deploy --config wrangler.public.toml   # meter wiring + steering vars
-npx wrangler deploy --config wrangler.secure.toml   # meter wiring
-npx wrangler deploy --config wrangler.meter.toml    # parity (no behavior change)
-```
+## 🟢 Future / nice-to-have
 
-Verify after deploy:
-- `curl -sI https://cf-pool.demo.jsherron.com/public/images/logo.png` → 200, `served-by: cf-edge`
-- Visit `https://meter.demo.jsherron.com/` → still `$0.00` until traffic generates real bytes
-- Run a few requests, refresh meter — "Bytes served from R2" should show non-zero
+- [ ] **Tighten CORS** on the secure Worker before any non-demo use. Current config is `Access-Control-Allow-Origin: *`. Production behind Cloudflare Access would restrict to known origins.
+- [ ] **`verify-all.sh` honest TLS** — drop the `ssl.CERT_NONE` lines. Was kept for WARP compatibility but it can no longer catch a bad cert. Either drop it or add an explicit `--insecure` opt-in.
+- [ ] **Meter UI display fixes** (cosmetic):
+  - `toFixed(2)` rounds Azure's `0.087/GB` to display `0.09/GB` — same as AWS. Use `toFixed(3)` or render as `$0.087` literal.
+  - `$1800.00` should render as `$1,800` — add comma-grouping to `formatDollars`.
+- [ ] **Build manual + run-of-show in sync** — manual still describes the original three-`wrangler.<role>.toml` layout; the implementation note at the top covers the KV→R2 migration but not the env-config refactor.
 
----
-
-## 🔴 Priority 2: Order wildcard SSL cert
-
-**Problem:** `assets.demo.jsherron.com` has no SSL certificate. LB virtual hostnames don't auto-provision like Workers/R2 do.
-
-**Solution (recommended — wildcard):**
-- [ ] Go to **SSL/TLS → Edge Certificates**
-- [ ] (Optional) Delete demo-specific certs (`*.cf-pool.demo`, `*.meter.demo`, `*.secure.demo`) — cleaner with wildcard
-- [ ] Click **Order Advanced Certificate**
-- [ ] Add hostnames: `*.demo.jsherron.com`, `demo.jsherron.com`
-- [ ] Validation: TXT, validity 90d
-- [ ] Wait 1–2 minutes for provisioning
-- [ ] Test with browser: `https://assets.demo.jsherron.com/public/images/logo.png`
-
-**Why wildcard:** One cert covers ALL demo subdomains (assets, meter, secure, cf-pool, cloudfront-pool, portal, audit). Prevents gaps like this in the future.
-
----
-
-## 🔴 Priority 3: Verify Load Balancer Steering
-
-Once SSL is active and workers are redeployed:
-- [ ] Open `https://assets.demo.jsherron.com/public/images/logo.png` in Chrome/Safari
-- [ ] Check DevTools → Network → Response Headers for `served-by`
-- [ ] Refresh 10x, confirm mix of `cf-edge` and `cloudfront`
-
-**Expected result:** Roughly 50/50 mix of `served-by: cf-edge` and `served-by: cloudfront`
-
----
-
-## 🟡 Priority 4: Add Pages Custom Domains
-
-**Status:** Pages projects deployed; DNS exists; custom domains may not be attached on the project side.
-
-- [ ] `curl -sI https://portal.demo.jsherron.com/` — if 522/525 or wrong content, attach domain
-- [ ] `curl -sI https://audit.demo.jsherron.com/` — same check
-- [ ] If needed:
-  - Pages → `multicdn-demo-portal` → Custom domains → `portal.demo.jsherron.com`
-  - Pages → `multicdn-demo-audit` → Custom domains → `audit.demo.jsherron.com`
-
----
-
-## 🟡 Priority 5: Final Verification
-
-Once SSL is active and Workers are redeployed:
-- [ ] `warp-cli disconnect && ./scripts/verify-all.sh && warp-cli connect`
-- [ ] Test token expiry manually (issue token, wait 65s, verify 403)
-- [ ] Test scope mismatch (issue token for one path, access another)
-- [ ] **Generate real traffic and verify meter shows non-zero** — this is the new behavior the meter wiring unlocks
-
-> Note: `verify-all.sh` disables TLS verification globally (`ssl.CERT_NONE`). Useful with WARP, but it cannot catch a bad cert. If you want an honest TLS check before the demo, drop those lines temporarily.
-
----
-
-## 🟢 Priority 6: Demo Prep (If Time)
-
-- [ ] Verify all 5 demo tabs load:
-  1. `https://meter.demo.jsherron.com/`
-  2. `https://multicdn-demo-portal.pages.dev/` (or `portal.demo.jsherron.com`)
-  3. `https://multicdn-demo-audit.pages.dev/` (or `audit.demo.jsherron.com`)
-  4. Cloudflare LB dashboard
-  5. Terminal with curl loops ready
-- [ ] Take a fresh meter screenshot **after running real traffic** (now possible with Gap 1 fix). Send to AE for follow-up emails.
-- [ ] Prepare curl commands from `multicdn-demo-run-of-show-20260505T2317Z.md`
-
----
-
-## 🟢 Priority 7: Documentation
-
-- [x] `STATE.md` updated 2026-05-06 with R2 key map + code state
-- [x] `HANDOFF.md` updated with deploy step + meter status
-- [x] `RESTART.md` updated with current code state
-- [x] Build manual got KV→R2 migration note at top
-- [ ] Update `README.md` with actual project description (still has template content)
-- [ ] Commit the 2026-05-06 changes
-
----
-
-## Known Gotchas
+## Known Gotchas (still relevant)
 
 1. **WARP:** Always test from non-WARP context or use browser. Local `curl`/`python` will get TLS errors hitting CF-proxied hostnames.
-2. **LB SSL Certificate:** LB hostnames do NOT auto-provision SSL. Must create Advanced Certificate explicitly.
-3. **CloudFront Health Check:** Monitor path must be `/healthcheck.txt` (not `/public/healthcheck.txt`) because CloudFront origin path strips `/public/`.
+2. **CloudFront monitor path:** must be `/healthcheck.txt` (no `/public/`) because CloudFront's origin path strips `/public/`. This was the cause of the "AWS endpoint degraded" issue today.
+3. **LB pool Host header overrides:** CloudFront's ACM cert only covers `cloudfront-pool.demo.jsherron.com`, so the LB must rewrite Host/SNI to that hostname. Without the override, Cloudflare returns 525 on every request routed to the CloudFront pool.
 4. **Wrangler auth:** OAuth token expires; may need `wrangler login` on restart.
-5. **R2 uploads:** Must use `--remote` flag or uploads go to local dev.
-6. **DNS propagation:** Custom domains take 30-60s after deploy.
-7. **CloudFront deploys:** 10-15 minutes for distribution updates.
-8. **Meter counter:** Non-atomic R2 read-modify-write. Concurrent writes may lose a few bytes per hour. Acceptable per build manual.
-9. **`verify-all.sh` TLS:** Script disables verification globally — won't catch bad certs.
+5. **Wrangler account selection:** multi-account contexts need `CLOUDFLARE_ACCOUNT_ID=1ddebf6f9507d3fc9052158be9d42dee` set in env.
+6. **R2 uploads:** Must use `--remote` flag or uploads go to local dev.
+7. **DNS propagation:** Custom domains take 30–60s after deploy.
+8. **CloudFront deploys:** 10–15 minutes for distribution updates.
+9. **Meter counter:** Non-atomic R2 read-modify-write. Concurrent writes may lose a few bytes per hour. Acceptable per build manual.
+10. **`verify-all.sh` TLS:** Script disables verification globally — won't catch bad certs. Useful with WARP, but flag it before non-WARP use.
 
 ## Resource Inventory
 
@@ -120,3 +43,4 @@ See `STATE.md` for full list. Key IDs:
 - CloudFront: `E362FEEO2DM9NE`
 - ACM Cert: `arn:aws:acm:us-east-1:512629184821:certificate/61445144-6bc4-4f98-96ac-950013484a1d`
 - KV Namespace (unused): `fdbdbb94864b4fb5bbdc19a011584f0a`
+- workers.dev subdomain: `jsherron-test-account.workers.dev`

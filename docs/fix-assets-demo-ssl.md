@@ -1,9 +1,26 @@
 # Fix: `assets.demo.jsherron.com` LB hostname
 
-**Status:** Partially resolved as of 2026-05-06T20:12Z. Wildcard cert is provisioned (TLS now works). New failure: **Cloudflare Error 1000 — "DNS points to prohibited IP."**
-**Original symptom:** `curl -sI https://assets.demo.jsherron.com/public/images/logo.png` (with WARP off) returned a TLS error or `525 SSL handshake failed`. — **Resolved by ordering the `*.demo.jsherron.com` wildcard.**
-**Current symptom:** TLS handshake completes; HTTP response is a Cloudflare error page with code 1000 (Ray ID example: `9f7aa2d008016a4a`).
-**Impact:** Beat 2 of the run-of-show still cannot work, but the SSL story is closed; this is now a DNS issue.
+**Status:** ✅ **Resolved 2026-05-06T20:30Z.** All three issues fixed in sequence — kept here as a runbook for future reference.
+
+## Resolution summary
+
+The LB hostname needed three fixes layered on top of each other:
+
+| Phase | Symptom | Root cause | Fix |
+|---|---|---|---|
+| 1 | TLS error / 525 SSL handshake failed at the edge | No SSL cert covered the LB hostname (LB virtual hostnames invisible to Universal SSL) | Order Advanced Certificate for `*.demo.jsherron.com` |
+| 2 | Cloudflare Error 1000 / Pool degraded | CloudFront pool's health monitor was probing `/public/healthcheck.txt`; CloudFront's origin path adds `/public` so the request resolved to a missing key | Set monitor path to `/healthcheck.txt` (no `public/` prefix) for the cloudfront pool only |
+| 3 | 525 on production traffic; pool monitors green | LB sent inbound SNI/Host (`assets.demo.jsherron.com`) to pool origins; CloudFront's ACM cert only covers `cloudfront-pool.demo.jsherron.com` so its TLS handshake failed | Set **Host header override** on each pool to its origin hostname (`cf-pool.demo.jsherron.com` and `cloudfront-pool.demo.jsherron.com`) |
+
+After all three: 200s return on `https://assets.demo.jsherron.com/images/...` with `served-by` headers alternating between `cf-edge` and `cloudfront` per request.
+
+---
+
+(Original diagnosis preserved below for reference.)
+
+---
+
+**Original symptom:** `curl -sI https://assets.demo.jsherron.com/public/images/logo.png` (with WARP off) returned a TLS error or `525 SSL handshake failed`.
 
 ---
 

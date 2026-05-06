@@ -1,8 +1,8 @@
 # Multi-CDN Demo — Restart Documentation
 
 **Created:** 2026-05-06
-**Last updated:** 2026-05-06T00:35Z
-**Status:** Code green; configs reconciled; Layer 2 (LB SSL + redeploy + verify) still open.
+**Last updated:** 2026-05-06T20:30Z
+**Status:** ✅ Demo fully operational. Code green, infra resolved, no open blockers.
 
 ---
 
@@ -10,14 +10,15 @@
 
 | Component | URL | Status | Notes |
 |---|---|---|---|
-| R2 Bucket | `multicdn-demo-20260505-2351` | ✅ 12 objects | Public + private prefixes; now also `audit/` and `meter/` keys |
-| CF Pool Worker | `cf-pool.demo.jsherron.com` | ⚠️ Deployed (old code) | Code updated 2026-05-06; needs redeploy for meter wiring + steering vars |
+| R2 Bucket | `multicdn-demo-20260505-2351` | ✅ Active | Public + private + `audit/` + `meter/` prefixes |
+| CF Pool Worker | `cf-pool.demo.jsherron.com` | ✅ Deployed (current code) | Returns `served-by: cf-edge` |
 | CloudFront Pool | `cloudfront-pool.demo.jsherron.com` | ✅ Active | Returns `served-by: cloudfront` |
-| Load Balancer | `assets.demo.jsherron.com` | ⚠️ Deployed, **no SSL cert** | Pools healthy; SSL blocked on wildcard cert order |
-| Secure Worker | `secure.demo.jsherron.com` | ⚠️ Deployed (old code) | Code updated 2026-05-06; needs redeploy for meter wiring |
-| Egress Meter | `meter.demo.jsherron.com` | ⚠️ Deployed (old code) | Code updated 2026-05-06; previously always read $0.00 because no writer existed |
-| Portal Pages | `multicdn-demo-portal.pages.dev` | ✅ Deployed | Patient portal UI |
-| Audit Pages | `multicdn-demo-audit.pages.dev` | ✅ Deployed | Live audit table |
+| Load Balancer | `assets.demo.jsherron.com` | ✅ **Operational** | Wildcard cert active; both pools healthy; Host header overrides set |
+| Secure Worker | `secure.demo.jsherron.com` | ✅ Deployed (current code) | JWT + audit log + CORS verified |
+| Egress Meter | `meter.demo.jsherron.com` | ✅ Deployed (current code) | Bytes counter wired; populates with real traffic |
+| Portal Pages | `portal.demo.jsherron.com` / `multicdn-demo-portal.pages.dev` | ✅ Custom domain attached | |
+| Audit Pages | `audit.demo.jsherron.com` / `multicdn-demo-audit.pages.dev` | ✅ Custom domain attached | |
+| workers.dev fallbacks | `multicdn-demo-{public-steering,secure,meter}.jsherron-test-account.workers.dev` | ✅ Enabled | Backup hostnames if `*.demo` ever breaks |
 
 ---
 
@@ -54,35 +55,45 @@
 - `meter/index.ts` now imports `currentHourKey` from the shared lib instead of duplicating it.
 - `CLAUDE.md` File structure section updated to reality.
 
-### Not deployed
-None of the above is live until you run:
+### Deployed
+All three workers were redeployed via the env-based config 2026-05-06T00:55Z. workers.dev fallbacks were enabled in the same deploy. To redeploy:
 ```bash
-npx wrangler deploy --config wrangler.public.toml
-npx wrangler deploy --config wrangler.secure.toml
-npx wrangler deploy --config wrangler.meter.toml
+export CLOUDFLARE_ACCOUNT_ID=1ddebf6f9507d3fc9052158be9d42dee
+npx wrangler deploy --env public
+npx wrangler deploy --env secure
+npx wrangler deploy --env meter
 ```
+
+### LB infrastructure resolved 2026-05-06T20:30Z
+
+Three sequential issues, all fixed via dashboard:
+
+1. **SSL** — Ordered wildcard `*.demo.jsherron.com` Advanced Certificate
+2. **CloudFront pool monitor** — Path corrected to `/healthcheck.txt` (was `/public/healthcheck.txt` which CloudFront's origin path turned into a missing-key 403)
+3. **LB pool Host header overrides** — Set each pool's Host override to its origin hostname so CloudFront receives the SNI matching its ACM cert
+
+See `docs/fix-assets-demo-ssl.md` for the runbook covering all three.
 
 ---
 
 ## What's Working
 
-### Phase 1-4: R2 + Workers ✅ (deployed, partial code drift)
-- Workers deployed and responding
-- R2 bucket accessible
-- CloudFront distribution serving correctly
-- Public + secure Worker code in repo is ahead of deployed; redeploy needed for meter to populate
+### Phase 1–4: R2 + Workers ✅
+- All three workers deployed and responding (current repo code)
+- R2 bucket serving public assets
+- CloudFront distribution serving via `cloudfront-pool.demo.jsherron.com`
 
-### Phase 5: Load Balancer ⚠️
-- **Both pools show healthy** (`1 of 1`)
-- DNS record exists for `assets.demo.jsherron.com`
-- **No SSL cert** — wildcard cert order pending
-- **Local testing fails due to Cloudflare WARP intercepting TLS**
+### Phase 5: Load Balancer ✅
+- Both pools healthy
+- Wildcard cert provisioned and active
+- Host header overrides correctly route SNI to each pool's origin
+- 50/50 random steering verified end-to-end
 
-### Phase 6-7: Protected Content + Meter ⚠️
-- Token issuance works
-- Protected PDF serves correctly
-- Audit log records access (R2-backed)
-- **Meter previously always showed $0.00** because no writer existed — fixed in code, not yet deployed
+### Phase 6–7: Protected Content + Meter ✅
+- Token issuance works (CORS-aware)
+- Protected PDF serves correctly with valid token
+- Audit log records access (R2-backed; both allow + deny variants)
+- Meter UI populates from real traffic (was $0.00 forever before)
 
 ---
 

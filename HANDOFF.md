@@ -1,104 +1,80 @@
 # Here's Where We Left Off
 
-**Date:** 2026-05-06 (updated 00:55Z)
-**Status:** Code green; workers redeployed; run-of-show reconciled; Pages domains attached. **One blocker: LB SSL cert.**
+**Date:** 2026-05-06 (updated 20:30Z)
+**Status:** ✅ **Demo fully operational.** All blockers resolved.
 
 ---
 
-## ✅ What's Done
+## What's working
 
-You have a working multi-CDN demo on `jsherron.com`:
+| Component | URL | Verified |
+|---|---|---|
+| R2 Bucket | `multicdn-demo-20260505-2351` | ✓ |
+| CF Pool Worker | `cf-pool.demo.jsherron.com` | ✓ 200, `served-by: cf-edge` |
+| CloudFront Pool | `cloudfront-pool.demo.jsherron.com` | ✓ 200, `/healthcheck.txt` returns `ok` |
+| Load Balancer | `assets.demo.jsherron.com` | ✓ 200, both pools healthy, Host overrides set |
+| Secure Worker | `secure.demo.jsherron.com` | ✓ JWT issue + protected content + audit; CORS verified |
+| Egress Meter | `meter.demo.jsherron.com` | ✓ HTML renders; bytes counter wired |
+| Portal Pages | `portal.demo.jsherron.com` and `multicdn-demo-portal.pages.dev` | ✓ Custom domain attached |
+| Audit Pages | `audit.demo.jsherron.com` and `multicdn-demo-audit.pages.dev` | ✓ Custom domain attached |
+| workers.dev fallbacks | `multicdn-demo-{public-steering,secure,meter}.jsherron-test-account.workers.dev` | ✓ Enabled and serving |
 
-- **R2 bucket** with demo images, video, PDFs, audit log, and bytes counter
-- **Public-steering Worker** at `cf-pool.demo.jsherron.com` — three steering modes (passthrough, path_routing, percent_rollout). path_routing now actually 302s non-video paths to CloudFront (was header-only).
-- **CloudFront distribution** at `cloudfront-pool.demo.jsherron.com`
-- **Load Balancer** at `assets.demo.jsherron.com` with both pools healthy
-- **Secure Worker** at `secure.demo.jsherron.com` — JWT issuance, protected content, audit log, **CORS headers added** (was likely broken for portal/audit)
-- **Egress meter** at `meter.demo.jsherron.com` — bytes counter now actually populated by public + secure Workers
-- **Patient portal** at `multicdn-demo-portal.pages.dev` (also `portal.demo.jsherron.com`, attached, validating)
-- **Audit view** at `multicdn-demo-audit.pages.dev` (also `audit.demo.jsherron.com`, attached, validating)
-- **workers.dev URLs enabled** on all three workers as fallback path
+## What got resolved 2026-05-06
 
-### Today's work (2026-05-06)
+### Code (PR #1, merged into branch `feat/run-of-show-reconciliation`)
+- Code gates were 14 errors — now green with 41 tests
+- Toolchain bumped to current majors; vitest config migrated to `cloudflareTest()` plugin
+- `wrangler.toml` collapsed to single config with `[env.public|secure|meter]`
+- Real `path_routing` (302 to CloudFront for non-video paths)
+- CORS on secure Worker
+- Egress-meter byte counter wired into both write-side workers
+- Pages custom domains attached for portal and audit
+- All three workers redeployed
 
-| Layer | Change |
-|---|---|
-| **Code gates** | Was 14 errors — now `npm run typecheck`, `lint`, `test` all green |
-| **Toolchain** | Wrangler ^4, vitest ^4.1, vitest-pool-workers ^0.16, workers-types ^4.20260506.1 |
-| **Type model** | `Env` now augments `Cloudflare.Env` |
-| **Meter wiring** | New `src/lib/meter.ts`; public + secure Workers `ctx.waitUntil` an R2 bytes-counter increment per fetch |
-| **CORS (C2 fix)** | Added `Access-Control-Allow-Origin: *` + OPTIONS preflight to secure Worker. Verified via workers.dev — 200 + headers on `/audit/recent`, 204 on OPTIONS preflight to `/issue`. |
-| **path_routing (S3 fix)** | Non-video paths now 302→CloudFront. Verified: `/video/welcome.mp4` → 200 cf-edge; `/images/*` → 302 to `cloudfront-pool.demo`. |
-| **Wrangler config (C1 fix)** | Collapsed three `wrangler.<role>.toml` files into one `wrangler.toml` with `[env.public]`, `[env.secure]`, `[env.meter]`. Deploy is now `wrangler deploy --env <name>`. Old per-role files deleted. |
-| **Run-of-show updated** | Beat 3 now uses `--env public`; Setup adds WARP-off note; Beat 5 uses `?demo_seed=10`; Beat 2 timing widened to 30–45s. |
-| **Pages domains** | `portal.demo.jsherron.com` and `audit.demo.jsherron.com` attached via API (status: pending validation as of 00:55Z, should be active in 1–2 min). |
-| **Workers redeployed** | All three workers redeployed with the new config. workers.dev fallback enabled. |
-| **Stale stuff** | Removed `[[kv_namespaces]]` from wrangler.toml; removed `JWT_SECRET_ENV` unused const; deleted empty `src/handlers/`. |
-| **Build manual annotated** | KV→R2 migration note at top so future agents don't follow the manual blindly. |
+### Infrastructure (dashboard, today)
+- **Wildcard SSL cert** `*.demo.jsherron.com` ordered and active
+- **CloudFront pool monitor** path corrected to `/healthcheck.txt` (was probing `/public/healthcheck.txt`, which CloudFront's origin-path-prepend turned into a non-existent key)
+- **Host header overrides** added to both LB pools so each pool origin receives requests with SNI/Host matching its own hostname (CloudFront's ACM cert only covers `cloudfront-pool.demo.jsherron.com`, not the inbound LB hostname)
 
-## ⚠️ The Remaining Blocker
+## What's left
 
-### Load Balancer SSL certificate is missing for `assets.demo.jsherron.com`
+Nothing infra-blocking. Optional polish:
 
-This is **the only thing left**. I tried to order the wildcard via API but the OAuth token's `ssl_certs:write` scope doesn't translate to effective zone-level write authority — every cert API returned 9109/10000 unauthorized. You'll need either:
+1. **Demo dry run** with WARP off, walking the full 15-minute run-of-show
+2. **Generate real meter traffic** so the screenshot for AE follow-up shows a non-trivial bytes-served number
+3. **Merge PR #1** if you've reviewed it: https://github.com/cheapredwine/this-repo/pull/1
+4. **Update README.md** — still has template content (not blocking)
 
-**Option 1 — dashboard (recommended):**
-1. SSL/TLS → Edge Certificates → Order Advanced Certificate
-2. Hostnames: `*.demo.jsherron.com`, `demo.jsherron.com`
-3. Validation: TXT, validity 90d
-4. Wait 1–2 min
+## Files you should know about
 
-**Option 2 — give me a zone-scoped API token:**
-Create an API token with `Zone › SSL and Certificates › Edit` for `jsherron.com` and I'll order it via API. Set as `CLOUDFLARE_API_TOKEN` env var.
+- `STATE.md` — full inventory; updated to reflect operational state
+- `RESTART.md` — technical context for next agent session
+- `TODO.md` — now empty of P1/P2 items; only polish remains
+- `docs/fix-assets-demo-ssl.md` — runbook for the LB SSL/health/host-override fix sequence (kept as reference)
+- `multicdn-demo-run-of-show-*.md` — updated 2026-05-06 with env-based deploys, WARP note, demo_seed, longer LB-flip wait, real path_routing
+- `wrangler.toml` — single source of truth, env-based
+- `src/lib/meter.ts` — shared bytes-counter helper
 
-After the cert is active, verify:
+## Verify from your end
+
 ```bash
 warp-cli disconnect
-curl -sI https://assets.demo.jsherron.com/public/images/logo.png | grep -iE 'HTTP|served-by'
+for i in {1..10}; do
+  curl -sI https://assets.demo.jsherron.com/images/providers/rahman.jpg | grep -i served-by
+done
 warp-cli connect
 ```
 
-## 🔧 What Else You May Want To Do
+Expected: roughly 50/50 mix of `served-by: cf-edge` and `served-by: cloudfront`.
 
-1. **Pages domain validation** — should auto-complete in 1–2 min, but check:
-   ```bash
-   curl -s "https://api.cloudflare.com/client/v4/accounts/1ddebf6f9507d3fc9052158be9d42dee/pages/projects/multicdn-demo-portal/domains" -H "Authorization: Bearer <token>" | python3 -m json.tool
-   ```
-   If status is `active`, domains are live.
+## Monthly cost if left running
 
-2. **Verify LB steering** (after SSL cert active):
-   ```bash
-   warp-cli disconnect
-   for i in {1..10}; do
-     curl -sI https://assets.demo.jsherron.com/public/images/logo.png | grep -i served-by
-   done
-   warp-cli connect
-   ```
+~$5–10/month (LB ~$5 + CloudFront ~$0–5 depending on traffic + R2 storage). workers.dev URLs are free.
 
-3. **Generate real meter traffic** — After LB SSL active, run 50–100 requests through `assets.demo` and confirm `meter.demo` shows non-zero bytes-served. Take the screenshot for the AE.
+## Teardown when done
 
-4. **Demo dry run** — full 15-minute run-through with WARP off.
-
-## 📁 Files You Should Know About
-
-- `STATE.md` — full inventory, R2 key map, deploy commands
-- `RESTART.md` — technical context for next agent session
-- `TODO.md` — prioritized next steps (now down to 1 critical: SSL cert)
-- `multicdn-demo-run-of-show-*.md` — updated 2026-05-06 with env-based deploys, WARP note, demo_seed, longer LB-flip wait
-- `multicdn-demo-build-manual-*.md` — has KV→R2 migration note at top
-- `wrangler.toml` — single source of truth, env-based
-- `src/lib/meter.ts` — shared bytes-counter (new)
-- `src/workers/secure/index.ts` — now CORS-aware
-- `src/workers/public-steering/index.ts` — path_routing now real
-
-## 💰 Monthly Cost If Left Running
-
-~$5-10/month (Load Balancer + CloudFront + R2 storage). workers.dev URLs are free.
-
-## 🗑️ Teardown When Done
-
-See `STATE.md` for the full teardown checklist. New addition: disable workers.dev subdomains and delete the wildcard Advanced Certificate (after step 1).
+See `STATE.md` for the full checklist. Don't forget the wildcard cert (delete from SSL/TLS → Edge Certificates) and the workers.dev subdomains (disable per worker).
 
 ---
 
-**Bottom line:** Demo is functionally complete and verified end-to-end against `workers.dev` URLs. Only blocker is the LB SSL cert, which needs your dashboard or a zone-scoped API token. Estimated 5 minutes of your time to unblock.
+**Bottom line:** demo is ready. Take a screenshot of the meter after generating some traffic, do a dry run, and you're set.
