@@ -18,8 +18,7 @@ Do not proceed with any other work until these steps are done.
 
 ## Project context
 
-<!-- TODO: Replace this section with a description of this specific project -->
-This is a Cloudflare-native project. All compute runs on Workers. There is no Node.js server, no Docker, no traditional backend. When in doubt, the answer is probably a Worker, a Durable Object, or a binding — not a new service.
+A multi-CDN demo environment that proves: (1) a single R2 origin serves multiple CDNs without replication, (2) CDN failover is operational not architectural, (3) protected content is JWT-gated and audited at the edge, and (4) origin egress fees are zero regardless of which CDN pulls. Built for a ~15-minute first meeting with a hospital IT director.
 
 ---
 
@@ -32,12 +31,8 @@ This is a Cloudflare-native project. All compute runs on Workers. There is no No
 | Package manager | bun |
 | Testing | vitest |
 | Linting / formatting | biome |
-| Storage (relational) | D1 |
 | Storage (blob) | R2 |
 | Storage (ephemeral KV) | Workers KV |
-| Stateful coordination | Durable Objects |
-| Agent framework | McpAgent (workers-mcp) |
-| Local dev | wrangler dev |
 
 <!-- TODO: Remove bindings not used in this project -->
 

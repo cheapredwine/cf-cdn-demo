@@ -5,13 +5,10 @@
 
 /**
  * Worker environment bindings.
- * Add bindings here as you add them to wrangler.toml.
  */
 export type Env = {
-  // Example:
-  // DB: D1Database;
-  // BUCKET: R2Bucket;
-  // KV: KVNamespace;
-  // AI: Ai;
-  // MY_SECRET: string;
+  BUCKET: R2Bucket;
+  JWT_SECRET: string;
+  STEERING_MODE: string;
+  ROLLOUT_PCT: string;
 };
