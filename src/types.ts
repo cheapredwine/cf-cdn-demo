@@ -5,10 +5,20 @@
 
 /**
  * Worker environment bindings.
+ *
+ * Declared as a Cloudflare.Env augmentation so cloudflare:test (vitest pool)
+ * can see the binding shape via `env: Cloudflare.Env`. Re-exported as `Env`
+ * for ergonomic use in worker source.
  */
-export type Env = {
-  BUCKET: R2Bucket;
-  JWT_SECRET: string;
-  STEERING_MODE: string;
-  ROLLOUT_PCT: string;
-};
+declare global {
+	namespace Cloudflare {
+		interface Env {
+			BUCKET: R2Bucket;
+			JWT_SECRET: string;
+			STEERING_MODE: string;
+			ROLLOUT_PCT: string;
+		}
+	}
+}
+
+export type Env = Cloudflare.Env;

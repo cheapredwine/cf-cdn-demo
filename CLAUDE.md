@@ -72,15 +72,23 @@ A multi-CDN demo environment that proves: (1) a single R2 origin serves multiple
 
 ```
 src/
-  index.ts          # Worker entry point — routing only, no business logic
-  types.ts          # All shared types
-  handlers/         # One file per route or concern
-  lib/              # Pure utility functions with no Worker dependencies
-  agents/           # McpAgent definitions
-__tests__/          # Mirrors src/ structure
-wrangler.toml
+  index.ts                     # Default-config Worker (template stub, used by vitest)
+  types.ts                     # All shared types; augments Cloudflare.Env
+  workers/
+    public-steering/index.ts   # Bound to cf-pool.demo — multi-mode CF pool
+    secure/index.ts            # Bound to secure.demo — JWT + audit log
+    meter/index.ts             # Bound to meter.demo — egress meter UI
+  pages/
+    portal/index.html          # Pages: patient portal
+    audit/index.html           # Pages: live audit view
+__tests__/                     # Mirrors src/ structure
+wrangler.toml                  # Default dev/test config (vitest reads this)
+wrangler.public.toml           # Deploy config for public-steering
+wrangler.secure.toml           # Deploy config for secure
+wrangler.meter.toml            # Deploy config for meter
 biome.json
 tsconfig.json
+vitest.config.mts
 ```
 
 Do not create files outside this structure without asking first.

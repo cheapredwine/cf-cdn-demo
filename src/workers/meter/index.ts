@@ -5,81 +5,71 @@
  * Reads bytes-served counter from R2, updated by public and secure Workers.
  */
 
+import { currentHourKey } from "../../lib/meter";
 import type { Env } from "../../types";
 
-const BYTES_KEY_PREFIX = "meter/bytes-hour-";
-
 function formatGB(bytes: number): string {
-  return (bytes / 1e9).toFixed(2);
+	return (bytes / 1e9).toFixed(2);
 }
 
 function formatDollars(cents: number): string {
-  if (cents === 0) return "$0.00";
-  const dollars = cents / 100;
-  return `$${dollars.toFixed(2)}`;
-}
-
-function currentHourKey(): string {
-  const now = new Date();
-  const y = now.getUTCFullYear();
-  const m = String(now.getUTCMonth() + 1).padStart(2, "0");
-  const d = String(now.getUTCDate()).padStart(2, "0");
-  const h = String(now.getUTCHours()).padStart(2, "0");
-  return `${BYTES_KEY_PREFIX}${y}-${m}-${d}-${h}.json`;
+	if (cents === 0) return "$0.00";
+	const dollars = cents / 100;
+	return `$${dollars.toFixed(2)}`;
 }
 
 async function getBytesServed(env: Env): Promise<number> {
-  const key = currentHourKey();
-  const object = await env.BUCKET.get(key);
-  if (!object) return 0;
-  try {
-    const text = await object.text();
-    const data = JSON.parse(text);
-    return Number(data.bytes) || 0;
-  } catch {
-    return 0;
-  }
+	const key = currentHourKey();
+	const object = await env.BUCKET.get(key);
+	if (!object) return 0;
+	try {
+		const text = await object.text();
+		const data = JSON.parse(text);
+		return Number(data.bytes) || 0;
+	} catch {
+		return 0;
+	}
 }
 
 const PROVIDERS = [
-  { name: "AWS S3 egress", listPrice: 0.09, enterprisePrice: 0.05 },
-  { name: "Azure Blob egress", listPrice: 0.087, enterprisePrice: 0.05 },
-  { name: "GCS multi-region", listPrice: 0.12, enterprisePrice: 0.08 },
-  { name: "Cloudflare R2", listPrice: 0.0, enterprisePrice: 0.0 },
+	{ name: "AWS S3 egress", listPrice: 0.09, enterprisePrice: 0.05 },
+	{ name: "Azure Blob egress", listPrice: 0.087, enterprisePrice: 0.05 },
+	{ name: "GCS multi-region", listPrice: 0.12, enterprisePrice: 0.08 },
+	{ name: "Cloudflare R2", listPrice: 0.0, enterprisePrice: 0.0 },
 ];
 
 const SCENARIOS = [
-  { label: "10 TB/month", savings: 1800, description: "small hospital web presence" },
-  { label: "50 TB/month", savings: 9000, description: "mid-size system" },
-  { label: "100 TB/month", savings: 18000, description: "large multi-facility" },
-  { label: "500 TB/month", savings: 90000, description: "regional health network" },
+	{ label: "10 TB/month", savings: 1800, description: "small hospital web presence" },
+	{ label: "50 TB/month", savings: 9000, description: "mid-size system" },
+	{ label: "100 TB/month", savings: 18000, description: "large multi-facility" },
+	{ label: "500 TB/month", savings: 90000, description: "regional health network" },
 ];
 
 function renderMeter(bytes: number, demoSeed = 0): Response {
-  const totalBytes = bytes + demoSeed * 1e9;
-  const totalGB = totalBytes / 1e9;
+	const totalBytes = bytes + demoSeed * 1e9;
+	const totalGB = totalBytes / 1e9;
 
-  const rows = PROVIDERS.map((p) => {
-    const listCost = totalGB * p.listPrice;
-    const entCost = totalGB * p.enterprisePrice;
-    return `<tr class="${p.name.includes("R2") ? "highlight" : ""}">
+	const rows = PROVIDERS.map((p) => {
+		const listCost = totalGB * p.listPrice;
+		const entCost = totalGB * p.enterprisePrice;
+		return `<tr class="${p.name.includes("R2") ? "highlight" : ""}">
       <td>${p.name}</td>
       <td>$${p.listPrice.toFixed(2)}/GB</td>
       <td>$${p.enterprisePrice.toFixed(2)}/GB</td>
       <td>${formatDollars(Math.round(listCost * 100))}</td>
       <td>${formatDollars(Math.round(entCost * 100))}</td>
     </tr>`;
-  }).join("");
+	}).join("");
 
-  const scenarioRows = SCENARIOS.map((s) => {
-    return `<tr>
+	const scenarioRows = SCENARIOS.map((s) => {
+		return `<tr>
       <td>${s.label}</td>
       <td>${formatDollars(s.savings * 100)}</td>
       <td>${s.description}</td>
     </tr>`;
-  }).join("");
+	}).join("");
 
-  const html = `<!DOCTYPE html>
+	const html = `<!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8">
@@ -161,11 +151,15 @@ function renderMeter(bytes: number, demoSeed = 0): Response {
     <div class="bytes">Bytes served from R2: ${formatGB(totalBytes)} GB</div>
   </div>
   <h2>What this same traffic would cost on traditional clouds</h2>
-  ${totalBytes === 0 ? '<div class="empty">Run some traffic to see comparisons</div>' : `
+  ${
+		totalBytes === 0
+			? '<div class="empty">Run some traffic to see comparisons</div>'
+			: `
   <table>
     <thead><tr><th>Provider</th><th>List price</th><th>Enterprise blended</th><th>This hour (list)</th><th>This hour (enterprise)</th></tr></thead>
     <tbody>${rows}</tbody>
-  </table>`}
+  </table>`
+	}
   <h2>Scale this to a hospital system's real volume</h2>
   <table>
     <thead><tr><th>If your system serves...</th><th>Annual egress savings (30% miss rate, $0.05/GB blended)</th><th>&nbsp;</th></tr></thead>
@@ -183,20 +177,20 @@ function renderMeter(bytes: number, demoSeed = 0): Response {
 </body>
 </html>`;
 
-  return new Response(html, {
-    headers: { "content-type": "text/html; charset=utf-8" },
-  });
+	return new Response(html, {
+		headers: { "content-type": "text/html; charset=utf-8" },
+	});
 }
 
 export async function handleMeter(request: Request, env: Env): Promise<Response> {
-  const url = new URL(request.url);
-  const demoSeed = Number.parseFloat(url.searchParams.get("demo_seed") || "0");
-  const bytes = await getBytesServed(env);
-  return renderMeter(bytes, demoSeed);
+	const url = new URL(request.url);
+	const demoSeed = Number.parseFloat(url.searchParams.get("demo_seed") || "0");
+	const bytes = await getBytesServed(env);
+	return renderMeter(bytes, demoSeed);
 }
 
 export default {
-  async fetch(request: Request, env: Env): Promise<Response> {
-    return handleMeter(request, env);
-  },
+	async fetch(request: Request, env: Env): Promise<Response> {
+		return handleMeter(request, env);
+	},
 } satisfies ExportedHandler<Env>;

@@ -4,6 +4,18 @@
 **Audience:** An agentic coding assistant (Claude Code or equivalent) operating on the SE's Mac
 **Companion docs:** `multicdn-demo-architecture-20260505T2317Z.md`, `multicdn-demo-run-of-show-20260505T2317Z.md`
 
+> **Implementation note (post-build, 2026-05-06):**
+> Phases 6 and 7 prescribe a Workers KV namespace for audit logging and the
+> egress-meter bytes counter. During the actual build the demo account did not
+> have KV write permissions (`code: 10023`), so both were migrated to R2:
+>
+> - Audit log → R2 keys under `audit/` prefix (reverse-timestamp + `jti`)
+> - Bytes counter → R2 key `meter/bytes-hour-{YYYY-MM-DD-HH}.json`
+>
+> The KV namespace `multicdn-demo-audit-20260505-2351` exists but is unused.
+> See `STATE.md` and `RESTART.md`. If you re-run this manual on a different
+> account, KV is still the preferred design — the R2 path is a workaround.
+
 ## How to use this manual
 
 Work through phases 0 → 8 in order. After each phase, post a summary to the SE listing what was created, IDs/ARNs/hostnames worth remembering, and any issues encountered. Wait for confirmation before proceeding to the next phase. Maintain a `STATE.md` file in the working directory recording every resource created — this is the source of truth for teardown later.
@@ -256,6 +268,37 @@ Use the Cloudflare API or dashboard. Create:
 - Session affinity: none (we want round-robin behavior for the demo)
 - Proxied: yes (orange cloud)
 
+### SSL Certificate (Critical — Do This First)
+
+Load Balancer hostnames **do not** automatically get SSL certificates. Unlike Workers or R2 custom domains (which auto-provision), LB virtual hostnames aren't visible to Universal SSL's DNS scanner.
+
+**Recommended approach: one wildcard certificate for all demo subdomains**
+
+Before creating any Load Balancer, go to **SSL/TLS → Edge Certificates → Order Advanced Certificate** and add:
+- `*.demo.<your-domain>`
+- `demo.<your-domain>`
+
+This single certificate covers:
+- `assets.demo.<your-domain>` (the LB hostname)
+- `meter.demo.<your-domain>`
+- `secure.demo.<your-domain>`
+- `cf-pool.demo.<your-domain>`
+- `cloudfront-pool.demo.<your-domain>`
+- `portal.demo.<your-domain>`
+- `audit.demo.<your-domain>`
+
+Wait for provisioning (1–2 minutes), then proceed with LB creation.
+
+**Why wildcard instead of individual certs:**
+- Cleaner — one certificate for all demo infrastructure
+- Prevents the exact failure mode where `assets.demo` has no cert while `*.meter.demo` does
+- Easier teardown — delete one cert instead of many
+- Works for any future demo subdomains without re-provisioning
+
+**What not to do:**
+- Don't rely on Universal SSL for LB hostnames — it won't find them
+- Don't create separate Advanced Certificates per subdomain (e.g., `*.cf-pool.demo`, `*.meter.demo`) — you'll end up with the same gap for `assets.demo`
+
 ### Verify
 
 ```bash
@@ -487,6 +530,7 @@ Post `STATE.md` summary to the SE. Demo environment is ready.
 
 - **ACM cert validation hangs:** check the validation CNAME exists in Cloudflare DNS and is set to "DNS only" (not proxied). Most common cause is the CNAME being proxied.
 - **CloudFront 403 on R2 fetch:** verify the R2 API token has read permission on the bucket, and that the origin custom headers in CloudFront are configured exactly as expected. If using R2's S3-compatible endpoint, the origin must be HTTPS and the bucket name must be in the path, not the host.
+- **LB hostname returns SSL/connection errors:** Load Balancer hostnames do NOT automatically get SSL certificates. Universal SSL scans DNS records, and LB virtual hostnames don't appear there. You must explicitly create an Advanced Certificate. **Recommended:** Order a single wildcard `*.demo.<your-domain>` before building anything else — covers all demo subdomains and prevents this gap entirely.
 - **LB health check failing on CloudFront pool:** the healthcheck URL on the CloudFront pool is `/healthcheck.txt` (origin path strips `/public`). Don't include `/public/` in the monitor path for that pool.
 - **Worker not invoked on `cf-pool` requests:** confirm the route in `wrangler.toml` matches the hostname exactly and that the zone is correct.
 - **Token validation fails immediately on issuance:** clock skew between the Worker minting and the Worker validating is rare but possible. Use Workers' `Date.now()` consistently and don't rely on system time.

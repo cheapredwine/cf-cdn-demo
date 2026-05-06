@@ -1,6 +1,7 @@
 # Multi-CDN Demo — STATE
 
 **Generated:** 2026-05-05T23:51Z
+**Last updated:** 2026-05-06T00:55Z (run-of-show reconciliation: env-based wrangler config, CORS, real path_routing, redeployed, Pages domains attached)
 **Domain:** jsherron.com
 **Cloudflare Account ID:** 1ddebf6f9507d3fc9052158be9d42dee
 **Cloudflare Zone ID:** 6bcf8859da225392d8fae3351eb5de3e
@@ -17,17 +18,19 @@
 
 ## Worker resources
 
-| Worker | Route | Notes |
-|---|---|---|
-| Public steering | `cf-pool.demo.jsherron.com/*` | Phase 4 |
-| Secure content | `secure.demo.jsherron.com/*` | Phase 6 |
-| Egress meter | `meter.demo.jsherron.com/*` | Phase 7 |
+All three deployed via single `wrangler.toml` with `[env.public|secure|meter]`. `workers.dev` URLs enabled as fallback.
+
+| Worker | Custom domain | workers.dev fallback | Notes |
+|---|---|---|---|
+| `multicdn-demo-public-steering` | `cf-pool.demo.jsherron.com` | `multicdn-demo-public-steering.jsherron-test-account.workers.dev` | Phase 4. path_routing now 302s non-video to CloudFront (real behavior, not header-only). |
+| `multicdn-demo-secure` | `secure.demo.jsherron.com` | `multicdn-demo-secure.jsherron-test-account.workers.dev` | Phase 6. CORS headers (`*`) on all endpoints + OPTIONS preflight. |
+| `multicdn-demo-meter` | `meter.demo.jsherron.com` | `multicdn-demo-meter.jsherron-test-account.workers.dev` | Phase 7. Reads R2 bytes counter (now actually populated by public + secure). |
 
 ## KV namespaces
 
 | Namespace | ID | Notes |
 |---|---|---|
-| `multicdn-demo-audit-20260505-2351` | `fdbdbb94864b4fb5bbdc19a011584f0a` | Phase 6 — created but not used (KV write perms issue, migrated to R2) |
+| `multicdn-demo-audit-20260505-2351` | `fdbdbb94864b4fb5bbdc19a011584f0a` | Phase 6 — created but **unused** (KV write perms issue, migrated to R2). Binding removed from `wrangler.toml` 2026-05-06. Still listed here for teardown. |
 
 ## Load Balancer resources
 
@@ -36,6 +39,7 @@
 | Pool `pool-cf-20260505-2351` | Created via dashboard | Phase 5 |
 | Pool `pool-cloudfront-20260505-2351` | Created via dashboard | Phase 5 |
 | Load Balancer `assets.demo.jsherron.com` | Created via dashboard | Phase 5 — steering 50/50 |
+| SSL Certificate | **MISSING** | `assets.demo.jsherron.com` needs Advanced Certificate (not auto-provisioned) |
 
 ## AWS resources
 
@@ -88,3 +92,39 @@
 - Load Balancer: ~$5/mo
 - CloudFront: ~$0.01/GB for North America/Europe
 - Total: ~$5-10/month
+
+---
+
+## R2 keys in use
+
+| Prefix | Purpose | Writers | Readers |
+|---|---|---|---|
+| `public/` | Demo assets (images, video, css, healthcheck) | seed upload (Phase 1) | both LB pools |
+| `private/docs/` | Demo PDFs (DEMO ONLY watermark) | seed upload (Phase 1) | secure Worker |
+| `audit/` | Audit log entries (`audit/<reverse-ts>-<jti>.json`) | secure Worker | secure `/audit/recent`, audit Pages UI |
+| `meter/bytes-hour-{YYYY-MM-DD-HH}.json` | Hourly bytes-served counter | public-steering + secure Workers (via `src/lib/meter.ts`) | meter Worker |
+
+## Code state (2026-05-06)
+
+- `npm run typecheck`, `npm run lint`, `npm test` all pass.
+- Toolchain bumped: wrangler ^4, vitest ^4.1, vitest-pool-workers ^0.16, workers-types ^4.20260506.1.
+- Vitest config migrated to `cloudflareTest()` plugin API (now `vitest.config.mts`).
+- `Env` type now augments `Cloudflare.Env` in `src/types.ts`.
+- New: `src/lib/meter.ts` — shared bytes-counter helper.
+- `wrangler.public.toml` now sets `STEERING_MODE`/`ROLLOUT_PCT` (was missing).
+- `wrangler.toml` no longer declares the unused KV binding.
+
+**Deploy commands (single config, env-based):**
+```
+CLOUDFLARE_ACCOUNT_ID=1ddebf6f9507d3fc9052158be9d42dee
+npx wrangler deploy --env public
+npx wrangler deploy --env secure
+npx wrangler deploy --env meter
+
+# Live mode-toggle for Beat 3 (no file edit needed):
+npx wrangler deploy --env public --var STEERING_MODE:path_routing
+npx wrangler deploy --env public --var STEERING_MODE:percent_rollout --var ROLLOUT_PCT:10
+npx wrangler deploy --env public   # reset to passthrough
+```
+
+All three workers were redeployed 2026-05-06T00:55Z with the env-based config + CORS + real path_routing + meter wiring.

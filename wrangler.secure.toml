@@ -1,9 +1,0 @@
-name = "multicdn-demo-secure"
-main = "src/workers/secure/index.ts"
-compatibility_date = "2025-04-01"
-compatibility_flags = ["nodejs_compat"]
-routes = [{ pattern = "secure.demo.jsherron.com", custom_domain = true }]
-
-[[r2_buckets]]
-binding = "BUCKET"
-bucket_name = "multicdn-demo-20260505-2351"
