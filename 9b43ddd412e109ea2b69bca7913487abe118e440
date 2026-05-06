@@ -1,0 +1,31 @@
+RESTART.md
+  bc8af170e04f2bf4 4-5,13-14,16-21,58-59,61-64,67-76,81-96
+HANDOFF.md
+  bc8af170e04f2bf4 3-4,8-59,62-64,68,70,72,74,76,80
+docs/fix-assets-demo-ssl.md
+  bc8af170e04f2bf4 3-23
+TODO.md
+  bc8af170e04f2bf4 3,7,9-12,14,16-21,23,26-27,29-34,46
+STATE.md
+  bc8af170e04f2bf4 4,39-42
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "9b43ddd412e109ea2b69bca7913487abe118e440",
+  "prompts": {
+    "bc8af170e04f2bf4": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_203df5c7fffePVxR5WBJJDxAud",
+        "model": "anthropic/claude-opus-4-7"
+      },
+      "human_author": "Jason Sherron",
+      "messages": [],
+      "total_additions": 154,
+      "total_deletions": 226,
+      "accepted_lines": 154,
+      "overriden_lines": 0
+    }
+  }
+}
