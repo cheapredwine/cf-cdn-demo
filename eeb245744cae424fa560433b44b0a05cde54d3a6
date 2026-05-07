@@ -1,0 +1,23 @@
+multicdn-demo-run-of-show-20260505T2317Z.md
+  bc8af170e04f2bf4 54,56-57,59-64,68
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "eeb245744cae424fa560433b44b0a05cde54d3a6",
+  "prompts": {
+    "bc8af170e04f2bf4": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_203df5c7fffePVxR5WBJJDxAud",
+        "model": "anthropic/claude-opus-4-7"
+      },
+      "human_author": "Jason Sherron",
+      "messages": [],
+      "total_additions": 11,
+      "total_deletions": 3,
+      "accepted_lines": 11,
+      "overriden_lines": 0
+    }
+  }
+}
