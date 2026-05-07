@@ -1,0 +1,23 @@
+src/pages/audit/index.html
+  bc8af170e04f2bf4 50-56,60-63,72-83,96-104,106-109,112
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "825feca9024ab76cd498bc9f5eec0863eb5cfc59",
+  "prompts": {
+    "bc8af170e04f2bf4": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_203df5c7fffePVxR5WBJJDxAud",
+        "model": "anthropic/claude-opus-4-7"
+      },
+      "human_author": "Jason Sherron",
+      "messages": [],
+      "total_additions": 40,
+      "total_deletions": 20,
+      "accepted_lines": 40,
+      "overriden_lines": 0
+    }
+  }
+}
