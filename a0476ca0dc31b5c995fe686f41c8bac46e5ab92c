@@ -1,0 +1,25 @@
+package.json
+  edbe6e48871c9e05 8-11
+README.md
+  edbe6e48871c9e05 27-28,30-41,44
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "a0476ca0dc31b5c995fe686f41c8bac46e5ab92c",
+  "prompts": {
+    "edbe6e48871c9e05": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_1ff393b36ffeEi4MosjgJ7RBDn",
+        "model": "cloudflare-workers-ai/@cf/moonshotai/kimi-k2.6"
+      },
+      "human_author": "Jason Sherron",
+      "messages": [],
+      "total_additions": 20,
+      "total_deletions": 1,
+      "accepted_lines": 20,
+      "overriden_lines": 0
+    }
+  }
+}
