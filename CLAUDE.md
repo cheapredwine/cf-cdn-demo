@@ -149,6 +149,20 @@ When you make an assumption, note it briefly at the end of your response: `Assum
 
 ---
 
+## Commit hygiene
+
+Project-state docs (anything tracking resource inventory, status, handoff context, or open work — typically named `STATE.md`, `HANDOFF.md`, `TODO.md`, `RESTART.md`, or similar) MUST be updated as part of preparing any commit that materially changes the project. Treat them as part of the diff, not as an afterthought.
+
+Specifically:
+- A commit that changes infrastructure (resources created, deleted, or reconfigured) updates `STATE.md` in the same commit.
+- A commit that changes "what's working / what's broken / what's next" updates `HANDOFF.md` and `TODO.md` in the same commit.
+- A commit that changes how a future agent should restart on this project updates `RESTART.md` in the same commit.
+- Run tests before any commit that touches code (per global agent rules); update test counts in state docs if they shifted.
+
+If no state docs exist yet but the project has accumulated context worth tracking, propose them before the next commit instead of letting context decay.
+
+---
+
 ## Local dev workflow
 
 ```bash

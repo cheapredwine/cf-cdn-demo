@@ -1,7 +1,7 @@
 # Multi-CDN Demo — STATE
 
 **Generated:** 2026-05-05T23:51Z
-**Last updated:** 2026-05-06T20:30Z (LB SSL/healthcheck/host-override sequence resolved — demo is fully operational)
+**Last updated:** 2026-05-07T05:00Z (browser dry-run verified end-to-end; UI bug fixes for audit/portal/meter; Pages domain CNAMEs added)
 **Domain:** jsherron.com
 **Cloudflare Account ID:** 1ddebf6f9507d3fc9052158be9d42dee
 **Cloudflare Zone ID:** 6bcf8859da225392d8fae3351eb5de3e
@@ -50,17 +50,17 @@ All three deployed via single `wrangler.toml` with `[env.public|secure|meter]`. 
 | ACM certificate | `arn:aws:acm:us-east-1:512629184821:certificate/61445144-6bc4-4f98-96ac-950013484a1d` | Phase 3 — ISSUED |
 | R2 read-only API token | TBD | Phase 3 |
 
-## DNS records created
+## DNS records
 
-| Hostname | Type | Target | Proxy |
-|---|---|---|---|
-| `cf-pool.demo.jsherron.com` | CNAME | R2 custom domain | Orange |
-| `cloudfront-pool.demo.jsherron.com` | CNAME | CloudFront domain | Gray |
-| `assets.demo.jsherron.com` | CNAME | LB hostname | Orange |
-| `secure.demo.jsherron.com` | CNAME | Worker | Orange |
-| `portal.demo.jsherron.com` | CNAME | Pages | Orange |
-| `audit.demo.jsherron.com` | CNAME | Pages | Orange |
-| `meter.demo.jsherron.com` | CNAME | Worker | Orange |
+| Hostname | Type | Target | Proxy | Notes |
+|---|---|---|---|---|
+| `cf-pool.demo.jsherron.com` | CNAME | R2 custom domain | Orange | Worker-bound via custom_domain |
+| `cloudfront-pool.demo.jsherron.com` | CNAME | CloudFront distribution | Gray | DNS-only; CloudFront serves with ACM cert |
+| `assets.demo.jsherron.com` | (LB-managed) | n/a | Orange | LB virtual hostname; auto-published by LB, no manual DNS row |
+| `secure.demo.jsherron.com` | (Worker-managed) | n/a | Orange | Worker custom_domain |
+| `portal.demo.jsherron.com` | CNAME | `multicdn-demo-portal.pages.dev` | Orange | Added via dashboard 2026-05-07 |
+| `audit.demo.jsherron.com` | CNAME | `multicdn-demo-audit.pages.dev` | Orange | Added via dashboard 2026-05-07 |
+| `meter.demo.jsherron.com` | (Worker-managed) | n/a | Orange | Worker custom_domain |
 
 ## Secrets generated
 

@@ -1,7 +1,7 @@
 # Here's Where We Left Off
 
-**Date:** 2026-05-06 (updated 20:30Z)
-**Status:** ✅ **Demo fully operational.** All blockers resolved.
+**Date:** 2026-05-07 (updated 04:55Z)
+**Status:** ✅ **Demo fully operational and verified end-to-end.** All blockers resolved; UI bugs found during dry-run also fixed.
 
 ---
 
@@ -35,14 +35,37 @@
 - **Wildcard SSL cert** `*.demo.jsherron.com` ordered and active
 - **CloudFront pool monitor** path corrected to `/healthcheck.txt` (was probing `/public/healthcheck.txt`, which CloudFront's origin-path-prepend turned into a non-existent key)
 - **Host header overrides** added to both LB pools so each pool origin receives requests with SNI/Host matching its own hostname (CloudFront's ACM cert only covers `cloudfront-pool.demo.jsherron.com`, not the inbound LB hostname)
+- **Pages custom domain CNAMEs** added: `portal.demo.jsherron.com → multicdn-demo-portal.pages.dev` and `audit.demo.jsherron.com → multicdn-demo-audit.pages.dev`, both proxied. Pages auto-validated and provisioned per-domain certs once CNAMEs were in place.
+
+### UI bugs found during dry-run, all fixed
+- **Audit page timestamps had no date** (only HH:MM:SS) — couldn't tell which row was "now" vs old rehearsal entries.
+- **Audit page rendered rows in reverse order** — newest at bottom because `insertBefore(tr, firstChild)` inverted the API's newest-first ordering.
+- **Audit page missed new entries on a capped 50-row list** — `lastCount`-based new-entry detection underflowed.
+- **Portal hid the link after the 60-second countdown** — SE had to remember to copy the link before expiry to demo the 403; now the link stays clickable with a red EXPIRED indicator inline.
+- **Meter page was tall enough to require scrolling** for the AE screenshot — compressed via tighter padding/margins, smaller hero font, consolidated footnotes.
+
+### Run-of-show updates (post-dry-run)
+- All four curl loops now cache-bust with `?cb=$i`. Without it, Cloudflare's edge caches the first MISS and every subsequent curl shows the same `served-by` from cache — burned a verification session before catching this.
+- Beat 2 failover mechanism expanded: explicit click-paths for both "toggle pool off" (instant) and "break monitor" (~30s, more realistic) options.
+
+## What's been verified live (this session)
+
+| Beat | Verified | How |
+|---|---|---|
+| 2 — multi-CDN steering | ✅ | Browser DevTools at `assets.demo.jsherron.com` showed mix of `served-by: cf-edge` and `cloudfront` once cache-busted with `?cb=` |
+| 4 — token + protected content | ✅ | Browser flow at `portal.demo.jsherron.com`: Generate → URL with countdown → click → PDF served. CORS verified clean (no console errors). |
+| 4 — deny path | ✅ | Waited for token expiry, refreshed PDF tab → 403; audit page showed new top-row deny with red pill and reason `expired` |
+| 4 — audit live polling | ✅ | Allow + deny rows appeared in audit table within 2s of each event, newest at top |
+| 5 — meter screenshot | ✅ | `?demo_seed=10` shows hero `$0.00`, comparison table populated, hospital scenarios, all on one screen |
+| Pool hostnames direct | ✅ | Each `cf-pool.demo` and `cloudfront-pool.demo` returns its own `served-by` header |
 
 ## What's left
 
 Nothing infra-blocking. Optional polish:
 
-1. **Demo dry run** with WARP off, walking the full 15-minute run-of-show
-2. **Generate real meter traffic** so the screenshot for AE follow-up shows a non-trivial bytes-served number
-3. **Merge PR #1** if you've reviewed it: https://github.com/cheapredwine/this-repo/pull/1
+1. **Beat 3 deploy-rehearsal** — run `wrangler deploy --env public --var STEERING_MODE:path_routing` and back from your normal demo terminal once, to confirm wrangler auth + account-id env are set up. The worker logic is covered by tests; this is purely about avoiding shell mishaps live.
+2. **Generate real meter traffic** before the meeting (50–100 requests through `assets.demo`) so the AE screenshot shows non-trivial bytes-served. The demo_seed param is fine as fallback.
+3. **Merge PR #1**: https://github.com/cheapredwine/cf-cdn-demo/pull/1 (currently 8 commits)
 4. **Update README.md** — still has template content (not blocking)
 
 ## Files you should know about

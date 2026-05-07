@@ -1,8 +1,8 @@
 # Multi-CDN Demo — Restart Documentation
 
 **Created:** 2026-05-06
-**Last updated:** 2026-05-06T20:30Z
-**Status:** ✅ Demo fully operational. Code green, infra resolved, no open blockers.
+**Last updated:** 2026-05-07T04:55Z
+**Status:** ✅ Demo fully operational and verified end-to-end. Code green, infra resolved, UI bugs fixed during dry-run, no open blockers.
 
 ---
 
@@ -73,6 +73,30 @@ Three sequential issues, all fixed via dashboard:
 3. **LB pool Host header overrides** — Set each pool's Host override to its origin hostname so CloudFront receives the SNI matching its ACM cert
 
 See `docs/fix-assets-demo-ssl.md` for the runbook covering all three.
+
+### Pages custom domains resolved 2026-05-07T04:35Z
+
+The Pages domain attachments I made via API earlier were stuck in HTTP-validation pending because the underlying CNAMEs hadn't been written to the zone (Pages doesn't auto-create DNS for HTTP-validation method). User added two CNAMEs in dashboard:
+
+- `portal.demo.jsherron.com → multicdn-demo-portal.pages.dev`, proxied
+- `audit.demo.jsherron.com → multicdn-demo-audit.pages.dev`, proxied
+
+Pages auto-validated within ~2 minutes and provisioned per-domain certs.
+
+### UI bugs fixed during browser dry-run 2026-05-07T04:30–04:55Z
+
+Found and fixed during live verification:
+
+- **Audit page timestamps** — added date (`May 7 04:42:51.123` instead of just `04:42:51`)
+- **Audit page row order** — was rendering newest at bottom because `insertBefore(tr, firstChild)` over a newest-first iterator inverted ordering. Now iterates fresh entries in reverse.
+- **Audit page new-entry detection** — `lastCount`-based logic underflowed at the API's 50-row cap; replaced with a `Set` of seen `jti`s.
+- **Portal expiry** — link is no longer hidden when the countdown hits 0; SE can click the same URL post-expiry to demo the 403 without copying it earlier. Inline countdown chip changes to red `EXPIRED`.
+- **Meter page** — compressed for single-screen screenshot. Body padding 2rem→1rem, hero amount 96pt→64pt, h2 margins halved, table padding shrunk, two footnotes consolidated.
+
+### Run-of-show post-dry-run updates
+
+- All four curl loops cache-bust with `?cb=$i`. Cloudflare's edge caches repeated curls of the same URL; without cache-bust the loop shows the same `served-by` from cache and the steering verification silently lies.
+- Beat 2 failover mechanism expanded with explicit click-paths for both "toggle pool off" (instant) and "break monitor" (~30s, more realistic) options.
 
 ---
 
