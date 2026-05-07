@@ -1,0 +1,25 @@
+src/pages/portal/index.html
+  bc8af170e04f2bf4 24,44,46-48,63,68-70,72-77
+src/workers/meter/index.ts
+  bc8af170e04f2bf4 84-85,89-90,93,97,100,106,108,111,113,123-125,130,132-133,135-136,140,171
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "a793aeb91a4631daad56f613d0a213b817e6cd5a",
+  "prompts": {
+    "bc8af170e04f2bf4": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_203df5c7fffePVxR5WBJJDxAud",
+        "model": "anthropic/claude-opus-4-7"
+      },
+      "human_author": "Jason Sherron",
+      "messages": [],
+      "total_additions": 36,
+      "total_deletions": 31,
+      "accepted_lines": 36,
+      "overriden_lines": 0
+    }
+  }
+}
