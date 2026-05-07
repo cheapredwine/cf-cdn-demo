@@ -1,0 +1,29 @@
+HANDOFF.md
+  bc8af170e04f2bf4 77-79
+TODO.md
+  bc8af170e04f2bf4 17
+docs/proposal-images-followup-demo.md
+  bc8af170e04f2bf4 1-118
+multicdn-demo-run-of-show-20260505T2317Z.md
+  bc8af170e04f2bf4 199-202
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "997d19443ef50100a64b98010aaf407792d6a88c",
+  "prompts": {
+    "bc8af170e04f2bf4": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_203df5c7fffePVxR5WBJJDxAud",
+        "model": "anthropic/claude-opus-4-7"
+      },
+      "human_author": "Jason Sherron",
+      "messages": [],
+      "total_additions": 126,
+      "total_deletions": 1,
+      "accepted_lines": 126,
+      "overriden_lines": 0
+    }
+  }
+}
