@@ -41,9 +41,11 @@ Switch to terminal. Run the curl loop:
 
 ```bash
 for i in {1..10}; do
-  curl -sI https://assets.demo.<your-domain>/images/providers/rahman.jpg | grep -i served-by
+  curl -sI "https://assets.demo.<your-domain>/images/providers/rahman.jpg?cb=$i" | grep -i served-by
 done
 ```
+
+The `?cb=$i` (cache-bust) is essential. Without it, Cloudflare's edge will cache the first response and every subsequent curl returns the same `served-by` from cache — the LB steering only runs on cache MISS. **This burned a verification session in dry-run; don't skip it during the live demo.** If a customer asks why you're using the query string, the honest answer is "I'm forcing fresh fetches so you can see the steering happen on every request — in real traffic, the cache is the point: most requests don't even reach the LB."
 
 Watch responses alternate between `cf-edge` and `cloudfront`. Read the output out loud.
 
@@ -89,11 +91,11 @@ The deploy takes ~5–10 seconds (initial deploy of the session may take 12–15
 
 *"That's the deploy. Globally. To 330+ data centers. Ten seconds."*
 
-Run a curl loop targeting `/video/welcome.mp4`:
+Run a curl loop targeting `/video/welcome.mp4` (cache-bust each request — see Beat 2 note):
 
 ```bash
 for i in {1..10}; do
-  curl -sI https://cf-pool.demo.<your-domain>/video/welcome.mp4 | grep -iE 'served-by|routing-decision|location'
+  curl -sI "https://cf-pool.demo.<your-domain>/video/welcome.mp4?cb=$i" | grep -iE 'served-by|routing-decision|location'
 done
 ```
 
@@ -103,14 +105,14 @@ Then a loop on a non-video path:
 
 ```bash
 for i in {1..10}; do
-  curl -sI https://cf-pool.demo.<your-domain>/images/providers/rahman.jpg | grep -iE 'served-by|location'
+  curl -sI "https://cf-pool.demo.<your-domain>/images/providers/rahman.jpg?cb=$i" | grep -iE 'served-by|location'
 done
 ```
 
 Now you'll see all ten responses are **`HTTP 302`** with `Location: https://cloudfront-pool.demo.<your-domain>/...`. The Worker is actually routing — non-video traffic gets handed off to CloudFront. Demonstrate the round-trip by following one redirect with `curl -L`:
 
 ```bash
-curl -sIL https://cf-pool.demo.<your-domain>/images/providers/rahman.jpg | grep -iE 'served-by|HTTP'
+curl -sIL "https://cf-pool.demo.<your-domain>/images/providers/rahman.jpg?cb=final" | grep -iE 'served-by|HTTP'
 ```
 
 Final response shows `served-by: cloudfront`.
@@ -127,7 +129,7 @@ Then a 50-request loop:
 
 ```bash
 for i in {1..50}; do
-  curl -sI https://cf-pool.demo.<your-domain>/images/logo.png 2>/dev/null | grep -iE 'served-by|location'
+  curl -sI "https://cf-pool.demo.<your-domain>/images/logo.png?cb=$i" 2>/dev/null | grep -iE 'served-by|location'
 done | sort | uniq -c
 ```
 
