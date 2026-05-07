@@ -81,36 +81,36 @@ function renderMeter(bytes: number, demoSeed = 0): Response {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       background: #f8f9fa;
       color: #333;
-      line-height: 1.6;
-      padding: 2rem;
+      line-height: 1.4;
+      padding: 1rem 1.5rem;
       max-width: 960px;
       margin: 0 auto;
     }
-    h1 { color: #1a3a5c; margin-bottom: 1.5rem; font-size: 1.75rem; }
-    h2 { color: #1a3a5c; margin: 2rem 0 1rem; font-size: 1.25rem; }
+    h1 { color: #1a3a5c; margin: 0 0 0.75rem; font-size: 1.4rem; }
+    h2 { color: #1a3a5c; margin: 1rem 0 0.5rem; font-size: 1.05rem; }
     .hero {
       text-align: center;
-      padding: 3rem 2rem;
+      padding: 1.25rem 1.5rem;
       background: white;
       border-radius: 12px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-      margin-bottom: 2rem;
+      margin-bottom: 1rem;
     }
     .hero .amount {
-      font-size: 96pt;
+      font-size: 64pt;
       font-weight: 800;
       color: #F38020;
       line-height: 1;
     }
     .hero .sub {
-      font-size: 1.1rem;
+      font-size: 1rem;
       color: #666;
-      margin-top: 0.5rem;
+      margin-top: 0.4rem;
     }
     .hero .bytes {
-      font-size: 0.95rem;
+      font-size: 0.85rem;
       color: #888;
-      margin-top: 0.25rem;
+      margin-top: 0.2rem;
     }
     table {
       width: 100%;
@@ -120,22 +120,24 @@ function renderMeter(bytes: number, demoSeed = 0): Response {
       overflow: hidden;
       box-shadow: 0 2px 8px rgba(0,0,0,0.06);
     }
-    th, td { padding: 0.75rem 1rem; text-align: left; }
-    th { background: #1a3a5c; color: white; font-weight: 600; font-size: 0.85rem; }
+    th, td { padding: 0.4rem 0.75rem; text-align: left; }
+    th { background: #1a3a5c; color: white; font-weight: 600; font-size: 0.8rem; }
+    td { font-size: 0.9rem; }
     tr:nth-child(even) { background: #f8f9fa; }
     tr.highlight { background: #fff3e6; font-weight: 600; }
     tr.highlight td { color: #F38020; }
     .footnote {
-      font-size: 0.85rem;
+      font-size: 0.75rem;
       color: #666;
-      margin-top: 1rem;
-      padding: 1rem;
+      margin-top: 0.5rem;
+      padding: 0.6rem 0.85rem;
       background: white;
-      border-radius: 8px;
+      border-radius: 6px;
+      line-height: 1.4;
     }
     .empty {
       text-align: center;
-      padding: 2rem;
+      padding: 1rem;
       color: #888;
       background: white;
       border-radius: 8px;
@@ -166,13 +168,7 @@ function renderMeter(bytes: number, demoSeed = 0): Response {
     <tbody>${scenarioRows}</tbody>
   </table>
   <div class="footnote">
-    Assumes 30% origin cache miss rate, which is typical for multi-CDN setups where each CDN warms its cache independently.
-    Higher miss rates (common during cache evictions, new content rollouts, or DDoS events) increase savings proportionally.
-    List-price savings are roughly 1.8x higher than the blended-rate numbers above.
-  </div>
-  <div class="footnote" style="margin-top:0.5rem; font-size:0.75rem; color:#999;">
-    Methodology: counts bytes that actually came from R2 origin (cf-cache-status = MISS, EXPIRED, or BYPASS).
-    CloudFront pool traffic not directly observable from Cloudflare side, so meter slightly understates.
+    Assumes 30% origin cache miss rate (typical for multi-CDN). Higher miss rates increase savings proportionally; list-price savings run ~1.8x the blended numbers above. Methodology counts bytes pulled from R2 origin only (cf-cache-status MISS/EXPIRED/BYPASS); CloudFront pool traffic is opaque to Cloudflare so the meter slightly understates.
   </div>
 </body>
 </html>`;
