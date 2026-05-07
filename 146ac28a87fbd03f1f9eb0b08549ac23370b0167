@@ -1,0 +1,25 @@
+multicdn-demo-run-of-show-20260505T2317Z.md
+  edbe6e48871c9e05 10-17,228,234
+multicdn-demo-build-manual-20260505T2317Z.md
+  edbe6e48871c9e05 30
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "146ac28a87fbd03f1f9eb0b08549ac23370b0167",
+  "prompts": {
+    "edbe6e48871c9e05": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_1ff393b36ffeEi4MosjgJ7RBDn",
+        "model": "cloudflare-workers-ai/@cf/moonshotai/kimi-k2.6"
+      },
+      "human_author": "Jason Sherron",
+      "messages": [],
+      "total_additions": 11,
+      "total_deletions": 2,
+      "accepted_lines": 11,
+      "overriden_lines": 0
+    }
+  }
+}
