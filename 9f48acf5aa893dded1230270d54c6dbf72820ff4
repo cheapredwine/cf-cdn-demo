@@ -1,0 +1,31 @@
+HANDOFF.md
+  bc8af170e04f2bf4 3-4,38,40-60,66-68
+CLAUDE.md
+  bc8af170e04f2bf4 152-165
+STATE.md
+  bc8af170e04f2bf4 4,53-63
+TODO.md
+  bc8af170e04f2bf4 3,7,9-13,15,17-23,27-38,48-49,52
+RESTART.md
+  bc8af170e04f2bf4 4-5,77-99
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "9f48acf5aa893dded1230270d54c6dbf72820ff4",
+  "prompts": {
+    "bc8af170e04f2bf4": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_203df5c7fffePVxR5WBJJDxAud",
+        "model": "anthropic/claude-opus-4-7"
+      },
+      "human_author": "Jason Sherron",
+      "messages": [],
+      "total_additions": 110,
+      "total_deletions": 43,
+      "accepted_lines": 110,
+      "overriden_lines": 0
+    }
+  }
+}
