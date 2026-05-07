@@ -47,11 +47,20 @@
 
   <script>
     const API_BASE = 'https://secure.demo.jsherron.com';
-    let lastCount = 0;
+    // Track audit entries we've already rendered, keyed by jti (stable per record).
+    // Falling back to a composite key if jti is empty (legacy entries).
+    const seen = new Set();
+
+    function entryKey(entry) {
+      return entry.jti || `${entry.ts}|${entry.path}|${entry.decision}|${entry.reason || ''}`;
+    }
 
     function formatTs(ts) {
       const d = new Date(ts);
-      return d.toLocaleTimeString() + '.' + String(d.getMilliseconds()).padStart(3, '0');
+      const date = d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+      const time = d.toLocaleTimeString(undefined, { hour12: false });
+      const ms = String(d.getMilliseconds()).padStart(3, '0');
+      return `${date} ${time}.${ms}`;
     }
 
     function decisionColor(decision) {
@@ -60,36 +69,47 @@
         : 'bg-red-100 text-red-800 px-2 py-0.5 rounded-full text-xs font-medium';
     }
 
+    function buildRow(entry) {
+      const tr = document.createElement('tr');
+      tr.className = 'flash-new';
+      tr.innerHTML = `
+        <td class="px-4 py-2 text-gray-600 font-mono text-xs">${formatTs(entry.ts)}</td>
+        <td class="px-4 py-2 text-gray-800">${entry.sub || '-'}</td>
+        <td class="px-4 py-2 text-gray-600 font-mono text-xs">${entry.path || '-'}</td>
+        <td class="px-4 py-2 text-gray-600 font-mono text-xs">${entry.ip || '-'}</td>
+        <td class="px-4 py-2"><span class="${decisionColor(entry.decision)}">${entry.decision}</span></td>
+        <td class="px-4 py-2 text-gray-500 text-xs">${entry.reason || ''}</td>
+      `;
+      return tr;
+    }
+
     async function poll() {
       try {
         const resp = await fetch(`${API_BASE}/audit/recent`);
         const entries = await resp.json();
-
         if (entries.length === 0) return;
 
         const tbody = document.getElementById('auditBody');
         const emptyRow = document.getElementById('emptyRow');
         if (emptyRow) emptyRow.remove();
 
-        // Only prepend new entries
-        const newEntries = entries.slice(0, entries.length - lastCount);
-        lastCount = entries.length;
-
-        for (const entry of newEntries) {
-          const tr = document.createElement('tr');
-          tr.className = 'flash-new';
-          tr.innerHTML = `
-            <td class="px-4 py-2 text-gray-600 font-mono text-xs">${formatTs(entry.ts)}</td>
-            <td class="px-4 py-2 text-gray-800">${entry.sub || '-'}</td>
-            <td class="px-4 py-2 text-gray-600 font-mono text-xs">${entry.path || '-'}</td>
-            <td class="px-4 py-2 text-gray-600 font-mono text-xs">${entry.ip || '-'}</td>
-            <td class="px-4 py-2"><span class="${decisionColor(entry.decision)}">${entry.decision}</span></td>
-            <td class="px-4 py-2 text-gray-500 text-xs">${entry.reason || ''}</td>
-          `;
-          tbody.insertBefore(tr, tbody.firstChild);
+        // API returns newest-first. Find the entries we haven't seen, in API order.
+        const fresh = [];
+        for (const entry of entries) {
+          const key = entryKey(entry);
+          if (!seen.has(key)) {
+            seen.add(key);
+            fresh.push(entry);
+          }
         }
 
-        // Keep max 100 rows
+        // To preserve API ordering (newest at top of table) using insertBefore,
+        // iterate fresh in reverse so the API-newest is inserted last and ends up first.
+        for (const entry of [...fresh].reverse()) {
+          tbody.insertBefore(buildRow(entry), tbody.firstChild);
+        }
+
+        // Keep max 100 rows visible
         while (tbody.children.length > 100) {
           tbody.removeChild(tbody.lastChild);
         }
