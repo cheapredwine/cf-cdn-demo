@@ -1,0 +1,21 @@
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "074170268126da8bb42fa90b9dbe2e4cbcc74a45",
+  "prompts": {
+    "bc8af170e04f2bf4": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_203df5c7fffePVxR5WBJJDxAud",
+        "model": "anthropic/claude-opus-4-7"
+      },
+      "human_author": "Jason Sherron",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 3,
+      "overriden_lines": 0
+    }
+  }
+}
