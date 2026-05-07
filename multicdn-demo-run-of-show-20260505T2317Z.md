@@ -51,13 +51,21 @@ Watch responses alternate between `cf-edge` and `cloudfront`. Read the output ou
 
 *"Same URL. Same image. Same origin bucket. Different CDN per request. The browser, the user, the application — none of them know or care which CDN served any given byte. That's the multi-CDN promise."*
 
-Switch to the LB dashboard. Mark `pool-cloudfront` as disabled (toggle the pool, or change its health-check path to break it intentionally).
+Switch to the LB dashboard. Two options for "breaking" the CloudFront pool — pick one before the meeting and rehearse:
 
-Wait ~30–45 seconds (probe interval is 15s with 2 retries; worst case ~45s) while the health monitor flips it to unhealthy. Use the wait time to take a Q on session affinity / cache warming / cost differences (see below). Re-run the curl loop when the dashboard shows `unhealthy`.
+**Option A — toggle the pool off (recommended, instant):**
+Traffic → Load Balancing → `pool-cloudfront-20260505-2351` → flip the **Enabled** toggle to off → Save. The LB removes it from steering immediately. No 30s wait.
+
+**Option B — break the health check (more "realistic"):**
+Traffic → Load Balancing → Monitors → the CloudFront monitor → change Path from `/healthcheck.txt` to `/healthcheck-broken.txt` → Save. Wait 30–45s (15s probe × 2 retries) for the monitor to flip the pool to Critical. Use the wait time to field a question on session affinity / cache warming / cost differences (see below).
+
+Option A makes the beat tighter; option B makes it look more like a real outage. Either works.
+
+Re-run the curl loop when the dashboard shows the CloudFront pool as ineligible/critical.
 
 *"All ten now `cf-edge`. If CloudFront has an outage tomorrow, this is what your day looks like — about 30 seconds of degraded mix while the health checks notice, then clean failover. No DNS TTL waiting, no engineering ticket. The bucket never moved. The customer never knew."*
 
-Re-enable the pool. Wait for it to flip back to healthy. Run the loop once more, back to 50/50.
+Reverse whichever option you used: re-enable the pool toggle, or restore the monitor path to `/healthcheck.txt`. Wait for the dashboard to show the pool healthy again (instant for option A, ~30s for option B). Run the loop once more — back to 50/50.
 
 Pause for questions here. The IT director's first instinct is usually "what about session affinity / what about cache warming / what about cost differences between providers." Have answers ready:
 
